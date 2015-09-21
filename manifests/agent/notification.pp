@@ -39,17 +39,21 @@
 #   (optional) Save event details.
 #   Defaults to false
 #
+# [*notification_workers*]
+#   (optional) Number of workers for notification service (integer value).
+#   Defaults to $::os_service_default
+#
 #  [*package_ensure*]
 #    (optional) ensure state for package.
 #    Defaults to 'present'
 #
-
 class ceilometer::agent::notification (
-  $manage_service     = true,
-  $enabled            = true,
-  $ack_on_event_error = true,
-  $store_events       = false,
-  $package_ensure     = 'present',
+  $manage_service            = true,
+  $enabled                   = true,
+  $ack_on_event_error        = true,
+  $store_events              = false,
+  $notification_workers      = $::os_service_default,
+  $package_ensure            = 'present',
 ) {
 
   include ::ceilometer::params
@@ -84,8 +88,9 @@ class ceilometer::agent::notification (
   }
 
   ceilometer_config {
-    'notification/ack_on_event_error': value => $ack_on_event_error;
-    'notification/store_events'      : value => $store_events;
+    'notification/ack_on_event_error'       : value => $ack_on_event_error;
+    'notification/store_events'             : value => $store_events;
+    'DEFAULT/notification_workers'          : value => $notification_workers;
   }
 
 }

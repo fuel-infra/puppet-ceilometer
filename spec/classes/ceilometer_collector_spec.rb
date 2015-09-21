@@ -51,6 +51,7 @@ describe 'ceilometer::collector' do
       it 'configures ceilometer-collector server' do
         is_expected.to contain_ceilometer_config('collector/udp_address').with_value( '0.0.0.0' )
         is_expected.to contain_ceilometer_config('collector/udp_port').with_value( '4952' )
+        is_expected.to contain_ceilometer_config('DEFAULT/collector_workers').with_value('<SERVICE DEFAULT>')
       end
 
       it 'installs ceilometer-collector package' do
@@ -109,7 +110,7 @@ describe 'ceilometer::collector' do
 
   context 'on Debian platforms' do
     let :facts do
-      { :osfamily => 'Debian' }
+      @default_facts.merge({ :osfamily => 'Debian' })
     end
 
     let :platform_params do
@@ -122,7 +123,7 @@ describe 'ceilometer::collector' do
 
   context 'on RedHat platforms' do
     let :facts do
-      { :osfamily => 'RedHat' }
+      @default_facts.merge({ :osfamily => 'RedHat' })
     end
 
     let :platform_params do

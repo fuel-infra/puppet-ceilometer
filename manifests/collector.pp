@@ -22,12 +22,17 @@
 #    (optional) the ceilometer collector udp bind port.
 #    Defaults to '4952'
 #
+#  [*collector_workers*]
+#    (optional) Number of workers for collector service (integer value).
+#    Defaults to $::os_service_default
+#
 class ceilometer::collector (
-  $manage_service = true,
-  $enabled        = true,
-  $package_ensure = 'present',
-  $udp_address    = '0.0.0.0',
-  $udp_port       = '4952',
+  $manage_service    = true,
+  $enabled           = true,
+  $package_ensure    = 'present',
+  $udp_address       = '0.0.0.0',
+  $udp_port          = '4952',
+  $collector_workers = $::os_service_default,
 ) {
 
   include ::ceilometer::params
@@ -41,8 +46,9 @@ class ceilometer::collector (
   }
 
   ceilometer_config {
-    'collector/udp_address' : value => $udp_address;
-    'collector/udp_port'    : value => $udp_port;
+    'collector/udp_address':     value => $udp_address;
+    'collector/udp_port':        value => $udp_port;
+    'DEFAULT/collector_workers': value => $collector_workers;
   }
 
   Package[$::ceilometer::params::collector_package_name] -> Service['ceilometer-collector']
