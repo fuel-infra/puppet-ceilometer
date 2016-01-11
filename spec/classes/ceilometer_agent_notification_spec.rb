@@ -48,6 +48,16 @@ describe 'ceilometer::agent::notification' do
       is_expected.to contain_ceilometer_config('DEFAULT/notification_workers').with_value('<SERVICE DEFAULT>')
       is_expected.to contain_ceilometer_config('notification/ack_on_event_error').with_value( params[:ack_on_event_error] )
       is_expected.to contain_ceilometer_config('notification/store_events').with_value( params[:store_events] )
+      is_expected.to contain_ceilometer_config('notification/disable_non_metric_meters').with_value('<SERVICE DEFAULT>')
+    end
+
+    context 'with disabled non-metric meters' do
+      before do
+        params.merge!({ :disable_non_metric_meters => true })
+      end
+      it 'disables non-metric meters' do
+        is_expected.to contain_ceilometer_config('notification/disable_non_metric_meters').with_value(params[:disable_non_metric_meters])
+      end
     end
 
     [{:enabled => true}, {:enabled => false}].each do |param_hash|
@@ -116,12 +126,10 @@ describe 'ceilometer::agent::notification' do
 
   context 'on RHEL 7' do
     let :facts do
-      @default_facts.merge(
-        { :osfamily                  => 'RedHat',
-          :operatingsystem           => 'RedHat',
-          :operatingsystemmajrelease => 7
-        }
-      )
+      @default_facts.merge({ :osfamily                  => 'RedHat',
+        :operatingsystem           => 'RedHat',
+        :operatingsystemmajrelease => 7
+      })
     end
 
     let :platform_params do
@@ -134,12 +142,10 @@ describe 'ceilometer::agent::notification' do
 
   context 'on CentOS 7' do
     let :facts do
-      @default_facts.merge(
-        { :osfamily                  => 'RedHat',
-          :operatingsystem           => 'CentOS',
-          :operatingsystemmajrelease => 7
-        }
-      )
+      @default_facts.merge({ :osfamily                  => 'RedHat',
+        :operatingsystem           => 'CentOS',
+        :operatingsystemmajrelease => 7
+      })
     end
 
     let :platform_params do
@@ -152,12 +158,10 @@ describe 'ceilometer::agent::notification' do
 
   context 'on Scientific 7' do
     let :facts do
-      @default_facts.merge(
-        { :osfamily                  => 'RedHat',
-          :operatingsystem           => 'Scientific',
-          :operatingsystemmajrelease => 7
-        }
-      )
+      @default_facts.merge({ :osfamily                  => 'RedHat',
+        :operatingsystem           => 'Scientific',
+        :operatingsystemmajrelease => 7
+      })
     end
 
     let :platform_params do
@@ -170,12 +174,10 @@ describe 'ceilometer::agent::notification' do
 
   context 'on Fedora 20' do
     let :facts do
-      @default_facts.merge(
-        { :osfamily               => 'RedHat',
-          :operatingsystem        => 'Fedora',
-          :operatingsystemrelease => 20
-        }
-      )
+      @default_facts.merge({ :osfamily               => 'RedHat',
+        :operatingsystem        => 'Fedora',
+        :operatingsystemrelease => 20
+      })
     end
 
     let :platform_params do

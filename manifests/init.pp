@@ -27,22 +27,22 @@
 #  [*package_ensure*]
 #    ensure state for package. Optional. Defaults to 'present'
 #  [*debug*]
-#    should the daemons log debug messages. Optional. Defaults to 'False'
+#    should the daemons log debug messages. Optional. Defaults to undef
 #  [*log_dir*]
 #    (optional) directory to which ceilometer logs are sent.
 #    If set to boolean false, it will not log to any directory.
-#    Defaults to '/var/log/ceilometer'
+#    Defaults to undef
 #  [*verbose*]
-#    should the daemons log verbose messages. Optional. Defaults to 'False'
+#    should the daemons log verbose messages. Optional. Defaults to undef
 #  [*use_syslog*]
 #    (optional) Use syslog for logging
-#    Defaults to false
+#    Defaults to undef
 #  [*use_stderr*]
 #    (optional) Use stderr for logging
-#    Defaults to true
+#    Defaults to undef
 #  [*log_facility*]
 #    (optional) Syslog facility to receive log lines.
-#    Defaults to 'LOG_USER'
+#    Defaults to undef
 # [*rpc_backend*]
 #    (optional) what rpc/queuing service to use
 #    Defaults to 'rabbit'
@@ -96,6 +96,8 @@
 #    (optional) A list of memcached server(s) to use for caching.
 #    Defaults to undef
 #
+# DEPRECATED PARAMETERS
+#
 # [*qpid_hostname*]
 # [*qpid_port*]
 # [*qpid_username*]
@@ -109,7 +111,6 @@
 # [*qpid_reconnect_interval*]
 # [*qpid_reconnect_interval_min*]
 # [*qpid_reconnect_interval_max*]
-# (optional) various QPID options
 #
 class ceilometer(
   $http_timeout                       = '600',
@@ -119,12 +120,12 @@ class ceilometer(
   $metering_secret                    = false,
   $notification_topics                = ['notifications'],
   $package_ensure                     = 'present',
-  $debug                              = false,
-  $log_dir                            = '/var/log/ceilometer',
-  $verbose                            = false,
-  $use_syslog                         = false,
-  $use_stderr                         = true,
-  $log_facility                       = 'LOG_USER',
+  $debug                              = undef,
+  $log_dir                            = undef,
+  $verbose                            = undef,
+  $use_syslog                         = undef,
+  $use_stderr                         = undef,
+  $log_facility                       = undef,
   $rpc_backend                        = 'rabbit',
   $rabbit_host                        = '127.0.0.1',
   $rabbit_port                        = 5672,
@@ -140,23 +141,25 @@ class ceilometer(
   $kombu_ssl_keyfile                  = undef,
   $kombu_ssl_version                  = 'TLSv1',
   $memcached_servers                  = undef,
-  $qpid_hostname                      = 'localhost',
-  $qpid_port                          = 5672,
-  $qpid_username                      = 'guest',
-  $qpid_password                      = 'guest',
-  $qpid_heartbeat                     = 60,
-  $qpid_protocol                      = 'tcp',
-  $qpid_tcp_nodelay                   = true,
-  $qpid_reconnect                     = true,
-  $qpid_reconnect_timeout             = 0,
-  $qpid_reconnect_limit               = 0,
-  $qpid_reconnect_interval_min        = 0,
-  $qpid_reconnect_interval_max        = 0,
-  $qpid_reconnect_interval            = 0,
+  # DEPRECATED PARAMETERS
+  $qpid_hostname                      = undef,
+  $qpid_port                          = undef,
+  $qpid_username                      = undef,
+  $qpid_password                      = undef,
+  $qpid_heartbeat                     = undef,
+  $qpid_protocol                      = undef,
+  $qpid_tcp_nodelay                   = undef,
+  $qpid_reconnect                     = undef,
+  $qpid_reconnect_timeout             = undef,
+  $qpid_reconnect_limit               = undef,
+  $qpid_reconnect_interval_min        = undef,
+  $qpid_reconnect_interval_max        = undef,
+  $qpid_reconnect_interval            = undef,
 ) {
 
   validate_string($metering_secret)
 
+  include ::ceilometer::logging
   include ::ceilometer::params
 
   if $kombu_ssl_ca_certs and !$rabbit_use_ssl {
@@ -261,23 +264,7 @@ class ceilometer(
 
   # we keep "ceilometer.openstack.common.rpc.impl_qpid" for backward compatibility
   if $rpc_backend == 'ceilometer.openstack.common.rpc.impl_qpid' or $rpc_backend == 'qpid' {
-
-    ceilometer_config {
-      'DEFAULT/qpid_hostname'              : value => $qpid_hostname;
-      'DEFAULT/qpid_port'                  : value => $qpid_port;
-      'DEFAULT/qpid_username'              : value => $qpid_username;
-      'DEFAULT/qpid_password'              : value => $qpid_password, secret => true;
-      'DEFAULT/qpid_heartbeat'             : value => $qpid_heartbeat;
-      'DEFAULT/qpid_protocol'              : value => $qpid_protocol;
-      'DEFAULT/qpid_tcp_nodelay'           : value => $qpid_tcp_nodelay;
-      'DEFAULT/qpid_reconnect'             : value => $qpid_reconnect;
-      'DEFAULT/qpid_reconnect_timeout'     : value => $qpid_reconnect_timeout;
-      'DEFAULT/qpid_reconnect_limit'       : value => $qpid_reconnect_limit;
-      'DEFAULT/qpid_reconnect_interval_min': value => $qpid_reconnect_interval_min;
-      'DEFAULT/qpid_reconnect_interval_max': value => $qpid_reconnect_interval_max;
-      'DEFAULT/qpid_reconnect_interval'    : value => $qpid_reconnect_interval;
-    }
-
+    warning('Qpid driver is removed from Oslo.messaging in the Mitaka release')
   }
 
   # Once we got here, we can act as an honey badger on the rpc used.
@@ -285,36 +272,10 @@ class ceilometer(
     'DEFAULT/http_timeout'                : value => $http_timeout;
     'DEFAULT/rpc_backend'                 : value => $rpc_backend;
     'publisher/metering_secret'           : value => $metering_secret, secret => true;
-    'DEFAULT/debug'                       : value => $debug;
-    'DEFAULT/verbose'                     : value => $verbose;
-    'DEFAULT/use_stderr'                  : value => $use_stderr;
     'DEFAULT/notification_topics'         : value => join($notification_topics, ',');
     'database/event_time_to_live'         : value => $event_time_to_live;
     'database/metering_time_to_live'      : value => $metering_time_to_live;
     'database/alarm_history_time_to_live' : value => $alarm_history_time_to_live;
-  }
-
-  # Log configuration
-  if $log_dir {
-    ceilometer_config {
-      'DEFAULT/log_dir' : value  => $log_dir;
-    }
-  } else {
-    ceilometer_config {
-      'DEFAULT/log_dir' : ensure => absent;
-    }
-  }
-
-  # Syslog configuration
-  if $use_syslog {
-    ceilometer_config {
-      'DEFAULT/use_syslog':           value => true;
-      'DEFAULT/syslog_log_facility':  value => $log_facility;
-    }
-  } else {
-    ceilometer_config {
-      'DEFAULT/use_syslog':           value => false;
-    }
   }
 
   if $memcached_servers {

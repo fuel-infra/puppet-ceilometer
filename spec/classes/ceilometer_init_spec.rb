@@ -27,16 +27,6 @@ describe 'ceilometer' do
     }
   end
 
-  let :qpid_params do
-    {
-      :rpc_backend   => 'qpid',
-      :qpid_hostname => 'localhost',
-      :qpid_port     => 5672,
-      :qpid_username => 'guest',
-      :qpid_password  => 'guest',
-    }
-  end
-
   shared_examples_for 'ceilometer' do
 
     it 'configures time to live for events, meters and alarm histories' do
@@ -78,16 +68,11 @@ describe 'ceilometer' do
       end
     end
 
-    context 'with qpid' do
-      before {params.merge!( qpid_params ) }
-      it_configures 'a ceilometer base installation'
-      it_configures 'qpid support'
-    end
-
   end
 
   shared_examples_for 'a ceilometer base installation' do
 
+    it { is_expected.to contain_class('ceilometer::logging') }
     it { is_expected.to contain_class('ceilometer::params') }
 
     it 'configures ceilometer group' do
@@ -124,49 +109,10 @@ describe 'ceilometer' do
       it { expect { is_expected.to raise_error(Puppet::Error) } }
     end
 
-    it 'configures debug and verbosity' do
-      is_expected.to contain_ceilometer_config('DEFAULT/debug').with_value( params[:debug] )
-      is_expected.to contain_ceilometer_config('DEFAULT/verbose').with_value( params[:verbose] )
-    end
-
-    it 'configures use_stderr option' do
-      is_expected.to contain_ceilometer_config('DEFAULT/use_stderr').with_value( params[:use_stderr] )
-    end
-
-    it 'configures logging directory by default' do
-      is_expected.to contain_ceilometer_config('DEFAULT/log_dir').with_value( params[:log_dir] )
-    end
-
-    context 'with logging directory disabled' do
-      before { params.merge!( :log_dir => false) }
-
-      it { is_expected.to contain_ceilometer_config('DEFAULT/log_dir').with_ensure('absent') }
-    end
-
     it 'configures notification_topics' do
       is_expected.to contain_ceilometer_config('DEFAULT/notification_topics').with_value('notifications')
     end
 
-    it 'configures syslog to be disabled by default' do
-      is_expected.to contain_ceilometer_config('DEFAULT/use_syslog').with_value('false')
-    end
-
-    context 'with syslog enabled' do
-      before { params.merge!( :use_syslog => 'true' ) }
-
-      it { is_expected.to contain_ceilometer_config('DEFAULT/use_syslog').with_value('true') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/syslog_log_facility').with_value('LOG_USER') }
-    end
-
-    context 'with syslog enabled and custom settings' do
-      before { params.merge!(
-       :use_syslog   => 'true',
-       :log_facility => 'LOG_LOCAL0'
-      ) }
-
-      it { is_expected.to contain_ceilometer_config('DEFAULT/use_syslog').with_value('true') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/syslog_log_facility').with_value('LOG_LOCAL0') }
-    end
 
     context 'with overriden notification_topics parameter' do
       before { params.merge!( :notification_topics => ['notifications', 'custom']) }
@@ -298,39 +244,6 @@ describe 'ceilometer' do
     end
   end
 
-  shared_examples_for 'qpid support' do
-    context("with default parameters") do
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect').with_value(true) }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect_timeout').with_value('0') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect_limit').with_value('0') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect_interval_min').with_value('0') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect_interval_max').with_value('0') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_reconnect_interval').with_value('0') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_heartbeat').with_value('60') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_protocol').with_value('tcp') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_tcp_nodelay').with_value(true) }
-    end
-
-    context("with mandatory parameters set") do
-      it { is_expected.to contain_ceilometer_config('DEFAULT/rpc_backend').with_value('qpid') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_hostname').with_value( params[:qpid_hostname] ) }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_port').with_value( params[:qpid_port] ) }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_username').with_value( params[:qpid_username]) }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_password').with_value(params[:qpid_password]) }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/qpid_password').with_value( params[:qpid_password] ).with_secret(true) }
-    end
-
-    context("with legacy rpc_backend value") do
-      before { params.merge!( qpid_params ).merge!(:rpc_backend => 'ceilometer.openstack.common.rpc.impl_qpid') }
-      it { is_expected.to contain_ceilometer_config('DEFAULT/rpc_backend').with_value('ceilometer.openstack.common.rpc.impl_qpid') }
-    end
-
-    context("failing if the rpc_backend is not present") do
-      before { params.delete( :rpc_backend) }
-      it { expect { is_expected.to raise_error(Puppet::Error) } }
-    end
-  end
-
   shared_examples_for 'memcached support' do
     context "with memcached enabled" do
       before { params.merge!(
@@ -343,7 +256,7 @@ describe 'ceilometer' do
 
   context 'on Debian platforms' do
     let :facts do
-      { :osfamily => 'Debian' }
+      @default_facts.merge({ :osfamily => 'Debian' })
     end
 
     let :platform_params do
@@ -355,7 +268,7 @@ describe 'ceilometer' do
 
   context 'on RedHat platforms' do
     let :facts do
-      { :osfamily => 'RedHat' }
+      @default_facts.merge({ :osfamily => 'RedHat' })
     end
 
     let :platform_params do

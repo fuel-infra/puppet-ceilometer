@@ -56,6 +56,7 @@ This is a feature and bugfix release in the Kilo series.
 ####Maintenance
 - acceptance: checkout stable/kilo puppet modules
 
+
 ##2015-07-08 - 6.0.0
 ###Summary
 
