@@ -46,7 +46,7 @@ describe 'ceilometer::api' do
       is_expected.to contain_ceilometer_config('keystone_authtoken/identity_uri').with_value("http://127.0.0.1:35357/")
       is_expected.to contain_ceilometer_config('api/host').with_value( params[:host] )
       is_expected.to contain_ceilometer_config('api/port').with_value( params[:port] )
-      is_expected.to contain_ceilometer_config('DEFAULT/api_workers').with_value('<SERVICE DEFAULT>')
+      is_expected.to contain_ceilometer_config('api/workers').with_value('<SERVICE DEFAULT>')
     end
 
     [{:enabled => true}, {:enabled => false}].each do |param_hash|
@@ -161,7 +161,7 @@ describe 'ceilometer::api' do
     it_configures 'ceilometer-api'
   end
 
-  describe "with custom keystone identity_uri and auth_uri" do
+  describe "with deprecated custom keystone_identity_uri and keystone_auth_uri" do
     let :facts do
       @default_facts.merge({ :osfamily => 'RedHat' })
     end
@@ -169,6 +169,22 @@ describe 'ceilometer::api' do
       params.merge!({
         :keystone_identity_uri => 'https://foo.bar:35357/',
         :keystone_auth_uri => 'https://foo.bar:5000/',
+      })
+    end
+    it 'configures identity_uri and auth_uri but deprecates old auth settings' do
+      is_expected.to contain_ceilometer_config('keystone_authtoken/identity_uri').with_value("https://foo.bar:35357/");
+      is_expected.to contain_ceilometer_config('keystone_authtoken/auth_uri').with_value("https://foo.bar:5000/");
+    end
+  end
+
+  describe "with custom keystone identity_uri and auth_uri" do
+    let :facts do
+      @default_facts.merge({ :osfamily => 'RedHat' })
+    end
+    before do
+      params.merge!({
+        :identity_uri => 'https://foo.bar:35357/',
+        :auth_uri => 'https://foo.bar:5000/',
       })
     end
     it 'configures identity_uri and auth_uri but deprecates old auth settings' do
